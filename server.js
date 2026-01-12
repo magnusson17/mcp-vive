@@ -9,6 +9,7 @@ import { randomUUID } from "node:crypto"
 
 const PORT = process.env.PORT || 3000
 const DRUPAL_JSONAPI_ENDPOINT = process.env.DRUPAL_JSONAPI_ENDPOINT
+const DRUPAL_BASIC_AUTH = process.env.DRUPAL_BASIC_AUTH
 
 // Optional auth headers if Drupal is protected
 // e.g. DRUPAL_BEARER_TOKEN="xxxxx"
@@ -29,8 +30,7 @@ async function fetchJson(url) {
             method: "GET",
             headers: {
                 Accept: "application/vnd.api+json",
-                ...(DRUPAL_BASIC_AUTH
-                ? { Authorization: "Basic " + Buffer.from(DRUPAL_BASIC_AUTH).toString("base64") } : {})
+                ...(DRUPAL_BASIC_AUTH ? { Authorization: "Basic " + Buffer.from(DRUPAL_BASIC_AUTH).toString("base64") } : {})
             },
             signal: controller.signal
         })
@@ -109,43 +109,12 @@ function buildOperaUrlWithFilterParams(numeroInventario) {
     return endpoint.toString()
 }
 
-// Fallback using verbose condition format (in case buildOperaUrlWithFilterParams is disabled)
-function buildOperaUrlWithFilterParamsVerboseFallback(numeroInventario) {
-    
-    const u = new URL(DRUPAL_JSONAPI_ENDPOINT)
-    u.searchParams.set("page[limit]", "1")
-
-    u.searchParams.set("filter[inventario][condition][path]", "field_inventario")
-    u.searchParams.set("filter[inventario][condition][operator]", "=")
-    u.searchParams.set("filter[inventario][condition][value]", String(numeroInventario))
-
-    u.searchParams.set(
-        "include",
-        [
-            "field_autore",
-            "field_tipologia",
-            "field_luogo",
-            "field_tecnica",
-            "field_materiale",
-            "field_schedatore"
-        ].join(",")
-    )
-
-    return u.toString()
-}
-
 async function lookupOperaByInventario(numeroInventario) {
     
     // prima di fare il fetch devo costruire meglio l'url
     // partendo da DRUPAL_JSONAPI_ENDPOINT devo aggiungere tutti quei filtri che mi permettono di ottenere i valori delle relazioni (tassonomie, riferimenti...)
     const buildUrl = buildOperaUrlWithFilterParams(numeroInventario)
     let res = await fetchJson(buildUrl)
-
-    // If Drupal rejects the shortcut filter format, retry with verbose format
-    if (!res.ok && (res.status === 400 || res.status === 403)) {
-        const verboseUrl = buildOperaUrlWithFilterParamsVerboseFallback(numeroInventario)
-        res = await fetchJson(verboseUrl)
-    }
 
     if (!res.ok) {
         return {
