@@ -67,7 +67,7 @@ function stripHtml(html) {
         .trim()
 }
 
-// Resolve relationship(s) into readable names when included resources are present
+// risolvo tutti i campi aventi una relazione (field_schedatore, field_tipologia...)
 function resolveIncludedNames(payload, relData) {
     if (!payload?.included || !relData) return null
 
@@ -134,7 +134,7 @@ async function lookupOperaByInventario(numeroInventario) {
         }
     }
 
-    const a = item.attributes || {}
+    const itmeAttributes = item.attributes || {}
 
     const autore = resolveIncludedNames(payload, item.relationships?.field_autore?.data)
     const tipologia = resolveIncludedNames(payload, item.relationships?.field_tipologia?.data)
@@ -143,25 +143,25 @@ async function lookupOperaByInventario(numeroInventario) {
     const materiale = resolveIncludedNames(payload, item.relationships?.field_materiale?.data)
     const schedatore = resolveIncludedNames(payload, item.relationships?.field_schedatore?.data)
 
-    const descrizioneHtml = a.field_descrizione?.processed || a.field_descrizione?.value || ""
+    const descrizioneHtml = itmeAttributes.field_descrizione?.processed || itmeAttributes.field_descrizione?.value || ""
     const descrizioneText = stripHtml(descrizioneHtml)
 
     return {
         found: true,
         id: item.id,
         type: item.type,
-        title: a.title || null,
-        numero_inventario: a.field_inventario || null,
-        periodo: a.field_periodo || null,
-        data_label: a.field_data_label || null,
-        data_da: a.field_data_0 ?? null,
-        data_a: a.field_data_1 ?? null,
-        acquisizione: a.field_acquisizione || null,
+        title: itmeAttributes.title || null,
+        numero_inventario: itmeAttributes.field_inventario || null,
+        periodo: itmeAttributes.field_periodo || null,
+        data_label: itmeAttributes.field_data_label || null,
+        data_da: itmeAttributes.field_data_0 ?? null,
+        data_a: itmeAttributes.field_data_1 ?? null,
+        acquisizione: itmeAttributes.field_acquisizione || null,
         dimensioni: {
-            altezza: a.field_altezza ?? null,
-            larghezza: a.field_larghezza ?? null,
-            diametro: a.field_diametro ?? null,
-            spessore: a.field_spessore ?? null
+            altezza: itmeAttributes.field_altezza ?? null,
+            larghezza: itmeAttributes.field_larghezza ?? null,
+            diametro: itmeAttributes.field_diametro ?? null,
+            spessore: itmeAttributes.field_spessore ?? null
         },
         autore,
         tipologia,
@@ -173,7 +173,8 @@ async function lookupOperaByInventario(numeroInventario) {
             text: descrizioneText,
             html: descrizioneHtml
         },
-        links: item.links || null
+        links: item.links || null,
+        easter_egg: "questi dati provengono da mcp"
     }
 }
 
